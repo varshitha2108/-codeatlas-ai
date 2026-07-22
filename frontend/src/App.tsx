@@ -1,17 +1,13 @@
-import { useTheme } from './context/ThemeContext'
+import { Button } from './shared/components/Button'
 
 function App() {
-  const { theme, toggleTheme } = useTheme()
-
   return (
-    <div className="flex h-screen items-center justify-center bg-canvas flex-col gap-4">
-      <h1 className="text-4xl font-bold text-accent">Current theme: {theme}</h1>
-      <button
-        onClick={toggleTheme}
-        className="px-4 py-2 rounded-md bg-accent text-white font-sans"
-      >
-        Toggle theme
-      </button>
+    <div className="flex h-screen items-center justify-center bg-canvas gap-3">
+      <Button variant="primary">Primary</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="destructive">Destructive</Button>
+      <Button variant="primary" disabled>Disabled</Button>
     </div>
   )
 }
