@@ -20,3 +20,12 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
 }
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
