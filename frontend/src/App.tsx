@@ -1,20 +1,14 @@
-import { useTheme } from './context/ThemeContext'
-import { RadioGroup } from './shared/components/RadioGroup'
+import { CodeBlock } from './shared/components/CodeBlock'
 
 function App() {
-  const { theme, toggleTheme } = useTheme()
-
   return (
-    <div className="flex h-screen items-center justify-center bg-canvas">
-      <RadioGroup
-        name="theme"
-        value={theme}
-        onChange={() => toggleTheme()}
-        options={[
-          { value: 'dark', label: 'Dark' },
-          { value: 'light', label: 'Light' },
-        ]}
-      />
+    <div className="flex h-screen items-center justify-center bg-canvas p-8">
+      <div className="w-96">
+        <CodeBlock
+          language="typescript"
+          code={`function add(a: number, b: number): number {\n  return a + b;\n}`}
+        />
+      </div>
     </div>
   )
 }
