@@ -4,9 +4,11 @@ import { pool } from './config/db'
 import { errorHandler } from './middleware/errorHandler'
 import { sessionMiddleware } from './middleware/sessionMiddleware'
 import { requestLogger } from './middleware/requestLogger'
+import { projectsRouter } from './routes/projects.routes'
 
 const app = express()
 
+app.use(express.json())
 app.use(requestLogger)
 app.use(sessionMiddleware)
 
@@ -14,6 +16,8 @@ app.get('/v1/health', async (req, res) => {
   await pool.query('SELECT 1')
   res.json({ data: { status: 'ok' } })
 })
+
+app.use('/v1/projects', projectsRouter)
 
 app.use(errorHandler)
 
