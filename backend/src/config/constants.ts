@@ -1,0 +1,4 @@
+export const MAX_ZIP_SIZE_BYTES = 100 * 1024 * 1024 // 100MB
+export const MAX_FILE_COUNT = 5000
+export const MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024 // 500MB
+export const MAX_DIRECTORY_DEPTH = 20
