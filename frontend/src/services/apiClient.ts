@@ -26,3 +26,18 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
   return json.data
 }
+
+export async function apiPostFormData<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const json = await response.json()
+
+  if (!response.ok) {
+    throw new Error(json.error?.message || 'Something went wrong')
+  }
+
+  return json.data
+}
