@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import { env } from './config/env'
 import { pool } from './config/db'
 import { errorHandler } from './middleware/errorHandler'
@@ -8,6 +9,7 @@ import { projectsRouter } from './routes/projects.routes'
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())
 app.use(requestLogger)
 app.use(sessionMiddleware)
