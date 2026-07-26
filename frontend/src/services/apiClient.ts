@@ -1,5 +1,16 @@
 const BASE_URL = 'http://localhost:3001/v1'
 
+export async function apiGet<T>(path: string): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`)
+  const json = await response.json()
+
+  if (!response.ok) {
+    throw new Error(json.error?.message || 'Something went wrong')
+  }
+
+  return json.data
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
