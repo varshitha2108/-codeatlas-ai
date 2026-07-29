@@ -11,4 +11,5 @@ function requireEnv(key: string): string {
 export const env = {
   PORT: requireEnv('PORT'),
   DATABASE_URL: requireEnv('DATABASE_URL'),
+  GEMINI_API_KEY: requireEnv('GEMINI_API_KEY'),
 }
