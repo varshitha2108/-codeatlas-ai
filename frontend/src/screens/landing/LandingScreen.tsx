@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { useSnippetImport } from '../../features/ingestion/hooks/useSnippetImport'
 import { useZipUpload } from '../../features/ingestion/hooks/useZipUpload'
+import { useGithubImport } from '../../features/ingestion/hooks/useGithubImport'
 import { useTheme } from '../../context/ThemeContext'
 import { Button } from '../../shared/components/Button'
 import { Select } from '../../shared/components/Select'
+import { Input } from '../../shared/components/Input'
 
 export function LandingScreen() {
   const [code, setCode] = useState('')
   const [language, setLanguage] = useState('javascript')
+  const [repoUrl, setRepoUrl] = useState('')
   const { submit, isSubmitting, error } = useSnippetImport()
   const { upload, isUploading, error: uploadError } = useZipUpload()
+  const { submit: submitGithub, isImporting, error: githubError } = useGithubImport()
   const { theme, toggleTheme } = useTheme()
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -26,8 +30,25 @@ export function LandingScreen() {
         {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
       </button>
 
-      <div className="flex h-screen items-center justify-center gap-8">
-        <div className="w-full max-w-md flex flex-col gap-3">
+      <div className="flex h-screen items-center justify-center gap-8 flex-wrap px-8">
+        <div className="w-full max-w-sm flex flex-col gap-3">
+          <h1 className="text-2xl font-bold text-primary">Import a GitHub repo</h1>
+          <Input
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
+            placeholder="https://github.com/owner/repo"
+          />
+          {githubError && <p className="text-danger text-sm">{githubError}</p>}
+          <Button
+            variant="primary"
+            disabled={!repoUrl.trim() || isImporting}
+            onClick={() => submitGithub(repoUrl)}
+          >
+            {isImporting ? 'Importing...' : 'Import Repo'}
+          </Button>
+        </div>
+
+        <div className="w-full max-w-sm flex flex-col gap-3">
           <h1 className="text-2xl font-bold text-primary">Upload a ZIP project</h1>
           <label className="border-2 border-dashed border-default rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors">
             <input type="file" accept=".zip" onChange={handleFileChange} className="hidden" />

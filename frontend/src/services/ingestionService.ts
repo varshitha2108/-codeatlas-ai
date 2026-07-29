@@ -1,4 +1,5 @@
 import { apiPost, apiGet, apiPostFormData } from './apiClient'
+
 interface SnippetResponse {
   projectId: string
   status: string
@@ -9,6 +10,14 @@ interface UploadResponse {
   projectId: string
   status: string
   sourceType: string
+}
+
+interface GithubImportResponse {
+  projectId: string
+  status: string
+  sourceType: string
+  repoUrl: string
+  branch: string
 }
 
 interface StatusResponse {
@@ -27,6 +36,10 @@ export function uploadZipProject(file: File): Promise<UploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
   return apiPostFormData<UploadResponse>('/projects/upload', formData)
+}
+
+export function importGithubRepo(repoUrl: string) {
+  return apiPost<GithubImportResponse>('/projects/github-import', { repoUrl })
 }
 
 export function getProjectStatus(projectId: string) {
