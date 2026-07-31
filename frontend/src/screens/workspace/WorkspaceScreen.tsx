@@ -9,6 +9,8 @@ import { Card } from '../../shared/components/Card'
 import { Badge } from '../../shared/components/Badge'
 import { EmptyState } from '../../shared/components/EmptyState'
 import { Skeleton } from '../../shared/components/Skeleton'
+import { Input } from '../../shared/components/Input'
+import { Button } from '../../shared/components/Button'
 
 interface FileNode {
   path: string
@@ -18,10 +20,78 @@ interface FileNode {
 
 interface AICard {
   id: string
+  actionType: string
   filePath: string
   range: { startLine: number; endLine: number }
   content: string
   status: 'streaming' | 'done' | 'error'
+}
+
+const ACTIONS = [
+  { type: 'explain', label: '✦ Explain' },
+  { type: 'explain_beginner', label: '🌱 Beginner' },
+  { type: 'find_bugs', label: '🐞 Bugs' },
+  { type: 'optimize', label: '⚡ Optimize' },
+  { type: 'generate_comments', label: '📝 Comments' },
+  { type: 'generate_tests', label: '🧪 Tests' },
+  { type: 'ask_ai', label: '💬 Ask AI' },
+]
+
+const actionBadgeVariant: Record<string, 'default' | 'info' | 'warning' | 'success' | 'danger'> = {
+  explain: 'info',
+  explain_beginner: 'info',
+  find_bugs: 'warning',
+  optimize: 'success',
+  generate_comments: 'default',
+  generate_tests: 'default',
+  ask_ai: 'info',
+}
+
+function renderCardBody(card: AICard) {
+  if (card.status === 'error') {
+    return <p className="text-danger text-sm">{card.content}</p>
+  }
+
+  if (card.actionType === 'find_bugs') {
+    try {
+      const parsed = JSON.parse(card.content.match(/\[[\s\S]*\]/)?.[0] || '[]')
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return (
+          <div className="flex flex-col gap-2">
+            {parsed.map((bug: any, i: number) => (
+              <div key={i} className="flex gap-2 items-start">
+                <Badge
+                  variant={bug.severity === 'high' ? 'danger' : bug.severity === 'medium' ? 'warning' : 'default'}
+                >
+                  {bug.severity}
+                </Badge>
+                <p className="text-primary text-sm">{bug.description}</p>
+              </div>
+            ))}
+          </div>
+        )
+      }
+      if (Array.isArray(parsed) && parsed.length === 0 && card.status === 'done') {
+        return <p className="text-success text-sm">No issues found.</p>
+      }
+    } catch {
+      // still streaming raw JSON, fall through to raw text
+    }
+  }
+
+  if (card.actionType === 'optimize' || card.actionType === 'generate_comments' || card.actionType === 'generate_tests') {
+    return (
+      <pre className="bg-editor rounded-md p-3 text-xs font-mono text-primary overflow-x-auto whitespace-pre-wrap">
+        {card.content}
+      </pre>
+    )
+  }
+
+  return (
+    <div className="text-primary text-sm prose-sm">
+      <ReactMarkdown>{card.content}</ReactMarkdown>
+    </div>
+  )
 }
 
 export function WorkspaceScreen() {
@@ -38,6 +108,8 @@ export function WorkspaceScreen() {
   const [selection, setSelection] = useState<{ startLine: number; endLine: number } | null>(null)
   const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number } | null>(null)
   const [cards, setCards] = useState<AICard[]>([])
+  const [askQuestion, setAskQuestion] = useState('')
+  const [showAskInput, setShowAskInput] = useState(false)
   const editorRef = useRef<any>(null)
 
   useEffect(() => {
@@ -68,6 +140,7 @@ export function WorkspaceScreen() {
       if (sel.startLineNumber === sel.endLineNumber && sel.startColumn === sel.endColumn) {
         setToolbarPos(null)
         setSelection(null)
+        setShowAskInput(false)
         return
       }
       setSelection({ startLine: sel.startLineNumber, endLine: sel.endLineNumber })
@@ -83,20 +156,22 @@ export function WorkspaceScreen() {
     })
   }
 
-  function handleExplain() {
+  function runAction(actionType: string, question?: string) {
     if (!projectId || !activeFile || !selection) return
     setToolbarPos(null)
+    setShowAskInput(false)
+    setAskQuestion('')
 
     const tempId = `temp_${Date.now()}`
     setCards((prev) => [
-      { id: tempId, filePath: activeFile, range: selection, content: '', status: 'streaming' },
+      { id: tempId, actionType, filePath: activeFile, range: selection, content: '', status: 'streaming' },
       ...prev,
     ])
 
     let realId = tempId
 
     runAIAction(
-      { projectId, filePath: activeFile, selectedRange: selection, actionType: 'explain' },
+      { projectId, filePath: activeFile, selectedRange: selection, actionType, question },
       (metaCardId) => {
         realId = metaCardId
         setCards((prev) => prev.map((c) => (c.id === tempId ? { ...c, id: metaCardId } : c)))
@@ -115,6 +190,14 @@ export function WorkspaceScreen() {
         )
       }
     )
+  }
+
+  function handleActionClick(actionType: string) {
+    if (actionType === 'ask_ai') {
+      setShowAskInput(true)
+      return
+    }
+    runAction(actionType)
   }
 
   return (
@@ -164,17 +247,47 @@ export function WorkspaceScreen() {
           onMount={handleEditorMount}
         />
 
-        {toolbarPos && (
+        {toolbarPos && !showAskInput && (
           <div
             style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
-            className="flex gap-1 bg-surface-raised border border-subtle rounded-md shadow-lg p-1 animate-in fade-in"
+            className="flex gap-0.5 bg-surface-raised border border-subtle rounded-md shadow-lg p-1 flex-wrap max-w-md"
           >
-            <button
-              onClick={handleExplain}
-              className="px-3 py-1.5 rounded text-sm font-medium text-primary hover:bg-accent-subtle-bg hover:text-accent transition-colors"
+            {ACTIONS.map((action) => (
+              <button
+                key={action.type}
+                onClick={() => handleActionClick(action.type)}
+                className="px-2.5 py-1.5 rounded text-xs font-medium text-primary hover:bg-accent-subtle-bg hover:text-accent transition-colors whitespace-nowrap"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {toolbarPos && showAskInput && (
+          <div
+            style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
+            className="flex gap-1 bg-surface-raised border border-subtle rounded-md shadow-lg p-2 w-72"
+          >
+            <Input
+              value={askQuestion}
+              onChange={(e) => setAskQuestion(e.target.value)}
+              placeholder="Ask a question..."
+              className="flex-1"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && askQuestion.trim()) runAction('ask_ai', askQuestion)
+                if (e.key === 'Escape') setShowAskInput(false)
+              }}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!askQuestion.trim()}
+              onClick={() => runAction('ask_ai', askQuestion)}
             >
-              ✦ Explain
-            </button>
+              Go
+            </Button>
           </div>
         )}
       </div>
@@ -185,28 +298,25 @@ export function WorkspaceScreen() {
         {cards.length === 0 && (
           <EmptyState
             title="Highlight code to get started"
-            description="Select any code in the editor and click Explain to get an AI-powered explanation."
+            description="Select any code in the editor and choose an action to get AI-powered insight."
           />
         )}
 
         {cards.map((card) => (
           <Card key={card.id} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <Badge variant="info">Explain</Badge>
+              <Badge variant={actionBadgeVariant[card.actionType] || 'default'}>
+                {card.actionType.replace('_', ' ')}
+              </Badge>
               <span className="text-tertiary text-xs font-mono">
                 {card.filePath}:{card.range.startLine}-{card.range.endLine}
               </span>
             </div>
 
-            {card.status === 'error' ? (
-              <p className="text-danger text-sm">{card.content}</p>
-            ) : (
-              <div className="text-primary text-sm prose-sm">
-                <ReactMarkdown>{card.content}</ReactMarkdown>
-                {card.status === 'streaming' && (
-                  <span className="inline-block w-1.5 h-3.5 bg-accent ml-0.5 animate-pulse" />
-                )}
-              </div>
+            {renderCardBody(card)}
+
+            {card.status === 'streaming' && (
+              <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
             )}
           </Card>
         ))}

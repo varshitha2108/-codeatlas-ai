@@ -4,7 +4,7 @@ import { setupSSE, sendSSEEvent } from '../utils/sse'
 import { nanoid } from 'nanoid'
 
 export async function runAction(req: Request, res: Response) {
-  const { projectId, filePath, selectedRange, actionType } = req.body
+  const { projectId, filePath, selectedRange, actionType, question } = req.body
 
   setupSSE(res)
 
@@ -13,7 +13,7 @@ export async function runAction(req: Request, res: Response) {
 
   try {
     const result = await runAIAction(
-      { projectId, filePath, selectedRange, actionType },
+      { projectId, filePath, selectedRange, actionType, question },
       (token) => {
         sendSSEEvent(res, 'chunk', { token })
       }
