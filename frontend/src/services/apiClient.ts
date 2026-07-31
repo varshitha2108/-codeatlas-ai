@@ -1,7 +1,11 @@
+import { getSessionId } from './sessionId'
+
 const BASE_URL = 'http://localhost:3001/v1'
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`)
+  const response = await fetch(`${BASE_URL}${path}`, {
+    headers: { 'X-Session-Id': getSessionId() },
+  })
   const json = await response.json()
 
   if (!response.ok) {
@@ -14,7 +18,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
     body: JSON.stringify(body),
   })
 
@@ -30,6 +34,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 export async function apiPostFormData<T>(path: string, formData: FormData): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
+    headers: { 'X-Session-Id': getSessionId() },
     body: formData,
   })
 

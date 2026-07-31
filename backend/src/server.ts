@@ -5,6 +5,7 @@ import { pool } from './config/db'
 import { errorHandler } from './middleware/errorHandler'
 import { sessionMiddleware } from './middleware/sessionMiddleware'
 import { requestLogger } from './middleware/requestLogger'
+import { aiRateLimiter, generalRateLimiter } from './middleware/rateLimiter'
 import { projectsRouter } from './routes/projects.routes'
 import { filesRouter } from './routes/files.routes'
 import { aiRouter } from './routes/ai.routes'
@@ -21,9 +22,9 @@ app.get('/v1/health', async (req, res) => {
   res.json({ data: { status: 'ok' } })
 })
 
-app.use('/v1/projects', projectsRouter)
-app.use('/v1/projects/:projectId/files', filesRouter)
-app.use('/v1/ai', aiRouter)
+app.use('/v1/projects', generalRateLimiter, projectsRouter)
+app.use('/v1/projects/:projectId/files', generalRateLimiter, filesRouter)
+app.use('/v1/ai', aiRateLimiter, aiRouter)
 
 app.use(errorHandler)
 

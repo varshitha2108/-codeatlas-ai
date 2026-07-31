@@ -1,3 +1,5 @@
+import { getSessionId } from './sessionId'
+
 const BASE_URL = 'http://localhost:3001/v1'
 
 interface RunActionParams {
@@ -17,7 +19,7 @@ export async function runAIAction(
 ) {
   const response = await fetch(`${BASE_URL}/ai/actions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
     body: JSON.stringify(params),
   })
 
@@ -64,7 +66,7 @@ export async function sendFollowup(
 ) {
   const response = await fetch(`${BASE_URL}/ai/actions/${cardId}/followup`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
     body: JSON.stringify({ question }),
   })
 
