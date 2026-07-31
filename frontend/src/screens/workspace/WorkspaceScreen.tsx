@@ -4,7 +4,7 @@ import Editor from '@monaco-editor/react'
 import ReactMarkdown from 'react-markdown'
 import { getFileTree, getFileContent } from '../../services/projectService'
 import { useTheme } from '../../context/ThemeContext'
-import { runAIAction } from '../../services/aiService'
+import { runAIAction, sendFollowup } from '../../services/aiService'
 import { Card } from '../../shared/components/Card'
 import { Badge } from '../../shared/components/Badge'
 import { EmptyState } from '../../shared/components/EmptyState'
@@ -18,6 +18,12 @@ interface FileNode {
   language: string | null
 }
 
+interface FollowupTurn {
+  question: string
+  answer: string
+  status: 'streaming' | 'done'
+}
+
 interface AICard {
   id: string
   actionType: string
@@ -25,6 +31,9 @@ interface AICard {
   range: { startLine: number; endLine: number }
   content: string
   status: 'streaming' | 'done' | 'error'
+  followups: FollowupTurn[]
+  followupInput: string
+  isFollowupOpen: boolean
 }
 
 const ACTIONS = [
@@ -75,7 +84,7 @@ function renderCardBody(card: AICard) {
         return <p className="text-success text-sm">No issues found.</p>
       }
     } catch {
-      // still streaming raw JSON, fall through to raw text
+      // still streaming raw JSON
     }
   }
 
@@ -164,7 +173,17 @@ export function WorkspaceScreen() {
 
     const tempId = `temp_${Date.now()}`
     setCards((prev) => [
-      { id: tempId, actionType, filePath: activeFile, range: selection, content: '', status: 'streaming' },
+      {
+        id: tempId,
+        actionType,
+        filePath: activeFile,
+        range: selection,
+        content: '',
+        status: 'streaming',
+        followups: [],
+        followupInput: '',
+        isFollowupOpen: false,
+      },
       ...prev,
     ])
 
@@ -198,6 +217,70 @@ export function WorkspaceScreen() {
       return
     }
     runAction(actionType)
+  }
+
+  function toggleFollowup(cardId: string) {
+    setCards((prev) =>
+      prev.map((c) => (c.id === cardId ? { ...c, isFollowupOpen: !c.isFollowupOpen } : c))
+    )
+  }
+
+  function updateFollowupInput(cardId: string, value: string) {
+    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, followupInput: value } : c)))
+  }
+
+  function submitFollowup(cardId: string) {
+    const card = cards.find((c) => c.id === cardId)
+    if (!card || !card.followupInput.trim()) return
+
+    const question = card.followupInput
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === cardId
+          ? {
+              ...c,
+              followupInput: '',
+              followups: [...c.followups, { question, answer: '', status: 'streaming' }],
+            }
+          : c
+      )
+    )
+
+    sendFollowup(
+      cardId,
+      question,
+      (token) => {
+        setCards((prev) =>
+          prev.map((c) => {
+            if (c.id !== cardId) return c
+            const updated = [...c.followups]
+            const last = updated[updated.length - 1]
+            updated[updated.length - 1] = { ...last, answer: last.answer + token }
+            return { ...c, followups: updated }
+          })
+        )
+      },
+      () => {
+        setCards((prev) =>
+          prev.map((c) => {
+            if (c.id !== cardId) return c
+            const updated = [...c.followups]
+            updated[updated.length - 1] = { ...updated[updated.length - 1], status: 'done' }
+            return { ...c, followups: updated }
+          })
+        )
+      },
+      (message) => {
+        setCards((prev) =>
+          prev.map((c) => {
+            if (c.id !== cardId) return c
+            const updated = [...c.followups]
+            updated[updated.length - 1] = { ...updated[updated.length - 1], answer: message, status: 'done' }
+            return { ...c, followups: updated }
+          })
+        )
+      }
+    )
   }
 
   return (
@@ -317,6 +400,46 @@ export function WorkspaceScreen() {
 
             {card.status === 'streaming' && (
               <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
+            )}
+
+            {card.status === 'done' && (
+              <>
+                {card.followups.map((turn, i) => (
+                  <div key={i} className="border-t border-subtle pt-2 mt-1 flex flex-col gap-1">
+                    <p className="text-secondary text-xs font-medium">You asked: {turn.question}</p>
+                    <div className="text-primary text-sm prose-sm">
+                      <ReactMarkdown>{turn.answer}</ReactMarkdown>
+                      {turn.status === 'streaming' && (
+                        <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {!card.isFollowupOpen ? (
+                  <button
+                    onClick={() => toggleFollowup(card.id)}
+                    className="text-accent text-xs font-medium text-left hover:underline mt-1"
+                  >
+                    + Ask a follow-up
+                  </button>
+                ) : (
+                  <div className="flex gap-1 mt-1">
+                    <Input
+                      value={card.followupInput}
+                      onChange={(e) => updateFollowupInput(card.id, e.target.value)}
+                      placeholder="Ask a follow-up..."
+                      className="flex-1 text-xs"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submitFollowup(card.id)
+                      }}
+                    />
+                    <Button variant="secondary" size="sm" onClick={() => submitFollowup(card.id)}>
+                      Send
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </Card>
         ))}

@@ -13,6 +13,7 @@ import { geminiProvider } from './geminiProvider'
 import { AppError } from '../../errors/AppError'
 
 interface RunActionParams {
+  cardId: string
   projectId: string
   filePath: string
   selectedRange: { startLine: number; endLine: number }
@@ -46,8 +47,7 @@ export async function runAIAction(
   params: RunActionParams,
   onToken: (token: string) => void
 ) {
-  const { projectId, filePath, selectedRange, actionType, question } = params
-
+const { cardId, projectId, filePath, selectedRange, actionType, question } = params
   const file = await getFileContent(projectId, filePath)
   if (!file.content) {
     throw new AppError('FILE_NOT_FOUND', 404, 'File content not available')
@@ -94,7 +94,6 @@ export async function runAIAction(
       throw new AppError('INVALID_ACTION_TYPE', 400, `Unknown action type: ${actionType}`)
   }
 
-  const cardId = `card_${nanoid(10)}`
 
   const result = await geminiProvider.streamCompletion(
     {
