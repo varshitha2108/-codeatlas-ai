@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./design-system/tokens.css";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --color-canvas: var(--bg-canvas);

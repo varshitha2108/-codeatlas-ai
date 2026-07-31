@@ -8,6 +8,16 @@ const languageByExtension: Record<string, string> = {
   ts: 'typescript',
   tsx: 'typescript',
   py: 'python',
+  java: 'java',
+  cpp: 'cpp',
+  cc: 'cpp',
+  cxx: 'cpp',
+  c: 'c',
+  h: 'c',
+  go: 'go',
+  rb: 'ruby',
+  cs: 'csharp',
+  php: 'php',
 }
 
 function detectLanguage(path: string): string | null {

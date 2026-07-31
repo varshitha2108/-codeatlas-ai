@@ -12,4 +12,6 @@ export const env = {
   PORT: requireEnv('PORT'),
   DATABASE_URL: requireEnv('DATABASE_URL'),
   GEMINI_API_KEY: requireEnv('GEMINI_API_KEY'),
+  GITHUB_CLIENT_ID: requireEnv('GITHUB_CLIENT_ID'),
+  GITHUB_CLIENT_SECRET: requireEnv('GITHUB_CLIENT_SECRET'),
 }

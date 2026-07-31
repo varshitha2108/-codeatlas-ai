@@ -6,6 +6,13 @@ const languageExtensions: Record<string, string> = {
   javascript: 'js',
   typescript: 'ts',
   python: 'py',
+  java: 'java',
+  cpp: 'cpp',
+  c: 'c',
+  go: 'go',
+  ruby: 'rb',
+  csharp: 'cs',
+  php: 'php',
 }
 
 export async function createSnippetProject(input: SnippetInput, sessionId: string) {

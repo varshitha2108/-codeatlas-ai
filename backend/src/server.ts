@@ -9,6 +9,7 @@ import { aiRateLimiter, generalRateLimiter } from './middleware/rateLimiter'
 import { projectsRouter } from './routes/projects.routes'
 import { filesRouter } from './routes/files.routes'
 import { aiRouter } from './routes/ai.routes'
+import { authRouter } from './routes/auth.routes'
 
 const app = express()
 
@@ -25,6 +26,7 @@ app.get('/v1/health', async (req, res) => {
 app.use('/v1/projects', generalRateLimiter, projectsRouter)
 app.use('/v1/projects/:projectId/files', generalRateLimiter, filesRouter)
 app.use('/v1/ai', aiRateLimiter, aiRouter)
+app.use('/v1/auth', authRouter)
 
 app.use(errorHandler)
 

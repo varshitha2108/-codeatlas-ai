@@ -22,7 +22,6 @@ Explain what this specific selected code does:
 ${context.code}
 \`\`\`
 
-Give a clear, concise explanation (2-4 sentences for simple code, longer only if genuinely needed for complex logic).`
-
+If this is a small selection (a few lines), give a concise 2-4 sentence explanation. If this is a larger block of code (a full function or more), give a brief 1-2 sentence overview first, then a short bullet list walking through the key steps or logic blocks — but keep it scannable, not line-by-line unless asked.`
   return { systemPrompt, userPrompt }
 }

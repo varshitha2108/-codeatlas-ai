@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import ReactMarkdown from 'react-markdown'
 import { getFileTree, getFileContent } from '../../services/projectService'
@@ -97,7 +97,7 @@ function renderCardBody(card: AICard) {
   }
 
   return (
-    <div className="text-primary text-sm prose-sm">
+    <div className="text-primary text-sm prose prose-sm max-w-none">
       <ReactMarkdown>{card.content}</ReactMarkdown>
     </div>
   )
@@ -284,165 +284,177 @@ export function WorkspaceScreen() {
   }
 
   return (
-    <div className="flex h-screen bg-canvas">
-      <div className="w-56 bg-surface border-r border-subtle p-3 flex flex-col gap-1">
-        <h2 className="text-secondary text-xs font-medium mb-2 uppercase tracking-wide">
-          Explorer
-        </h2>
-        {isLoadingTree && (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-3/4" />
+    <div className="flex flex-col h-screen bg-canvas">
+      <div className="h-12 flex items-center px-4 border-b border-subtle bg-surface gap-3 shrink-0">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-white font-bold text-xs">
+            CA
           </div>
-        )}
-        {!isLoadingTree && files.length === 0 && (
-          <EmptyState title="No files" description="This project has no files." />
-        )}
-        {!isLoadingTree &&
-          files.map((file) => (
-            <button
-              key={file.path}
-              onClick={() => setActiveFile(file.path)}
-              className={`text-left px-2 py-1.5 rounded-md text-sm font-mono transition-colors truncate ${
-                activeFile === file.path
-                  ? 'bg-selected text-primary'
-                  : 'text-secondary hover:bg-hover hover:text-primary'
-              }`}
-              title={file.path}
-            >
-              {file.path}
-            </button>
-          ))}
+          <span className="text-primary font-semibold text-sm">CodeAtlas AI</span>
+        </Link>
+        <span className="text-tertiary text-xs">/</span>
+        <span className="text-secondary text-xs font-mono truncate max-w-xs">{projectId}</span>
       </div>
+      
 
-      <div className="flex-1 relative">
-        {isLoadingContent && (
-          <div className="absolute inset-0 flex items-center justify-center bg-editor z-10">
-            <Skeleton className="h-4 w-64" />
-          </div>
-        )}
-        <Editor
-          height="100%"
-          language={language}
-          value={content}
-          theme={theme === 'dark' ? 'vs-dark' : 'light'}
-          options={{ readOnly: true, minimap: { enabled: true }, fontSize: 13.5 }}
-          onMount={handleEditorMount}
-        />
-
-        {toolbarPos && !showAskInput && (
-          <div
-            style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
-            className="flex gap-0.5 bg-surface-raised border border-subtle rounded-md shadow-lg p-1 flex-wrap max-w-md"
-          >
-            {ACTIONS.map((action) => (
+      <div className="flex flex-1 overflow-hidden">
+<div className="w-60 bg-surface border-r border-subtle p-3.5 flex flex-col gap-1">          <h2 className="text-secondary text-xs font-medium mb-2 uppercase tracking-wide">
+            Explorer
+          </h2>
+          {isLoadingTree && (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-3/4" />
+            </div>
+          )}
+          {!isLoadingTree && files.length === 0 && (
+            <EmptyState title="No files" description="This project has no files." />
+          )}
+          {!isLoadingTree &&
+            files.map((file) => (
               <button
-                key={action.type}
-                onClick={() => handleActionClick(action.type)}
-                className="px-2.5 py-1.5 rounded text-xs font-medium text-primary hover:bg-accent-subtle-bg hover:text-accent transition-colors whitespace-nowrap"
+                key={file.path}
+                onClick={() => setActiveFile(file.path)}
+                className={`text-left px-2 py-1.5 rounded-md text-sm font-mono transition-colors truncate ${
+                  activeFile === file.path
+                    ? 'bg-selected text-primary'
+                    : 'text-secondary hover:bg-hover hover:text-primary'
+                }`}
+                title={file.path}
               >
-                {action.label}
+                {file.path}
               </button>
             ))}
-          </div>
-        )}
+        </div>
 
-        {toolbarPos && showAskInput && (
-          <div
-            style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
-            className="flex gap-1 bg-surface-raised border border-subtle rounded-md shadow-lg p-2 w-72"
-          >
-            <Input
-              value={askQuestion}
-              onChange={(e) => setAskQuestion(e.target.value)}
-              placeholder="Ask a question..."
-              className="flex-1"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && askQuestion.trim()) runAction('ask_ai', askQuestion)
-                if (e.key === 'Escape') setShowAskInput(false)
-              }}
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={!askQuestion.trim()}
-              onClick={() => runAction('ask_ai', askQuestion)}
-            >
-              Go
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="w-96 bg-surface border-l border-subtle p-3 overflow-y-auto flex flex-col gap-3">
-        <h2 className="text-secondary text-xs font-medium uppercase tracking-wide">AI Panel</h2>
-
-        {cards.length === 0 && (
-          <EmptyState
-            title="Highlight code to get started"
-            description="Select any code in the editor and choose an action to get AI-powered insight."
-          />
-        )}
-
-        {cards.map((card) => (
-          <Card key={card.id} className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Badge variant={actionBadgeVariant[card.actionType] || 'default'}>
-                {card.actionType.replace('_', ' ')}
-              </Badge>
-              <span className="text-tertiary text-xs font-mono">
-                {card.filePath}:{card.range.startLine}-{card.range.endLine}
-              </span>
+        <div className="flex-1 relative">
+          {isLoadingContent && (
+            <div className="absolute inset-0 flex items-center justify-center bg-editor z-10">
+              <Skeleton className="h-4 w-64" />
             </div>
+          )}
+          <Editor
+            height="100%"
+            language={language}
+            value={content}
+            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+            options={{ readOnly: true, minimap: { enabled: true }, fontSize: 13.5 }}
+            onMount={handleEditorMount}
+          />
 
-            {renderCardBody(card)}
+          {toolbarPos && !showAskInput && (
+            <div
+  style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
+  className="flex gap-0.5 bg-surface-raised border border-subtle rounded-lg shadow-xl p-1.5 flex-wrap max-w-md backdrop-blur-sm"
+>
+              {ACTIONS.map((action) => (
+                <button
+                  key={action.type}
+                  onClick={() => handleActionClick(action.type)}
+                  className="px-2.5 py-1.5 rounded text-xs font-medium text-primary hover:bg-accent-subtle-bg hover:text-accent transition-colors whitespace-nowrap"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-            {card.status === 'streaming' && (
-              <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
-            )}
+          {toolbarPos && showAskInput && (
+            <div
+              style={{ position: 'fixed', left: toolbarPos.x, top: toolbarPos.y, zIndex: 50 }}
+              className="flex gap-1 bg-surface-raised border border-subtle rounded-md shadow-lg p-2 w-72"
+            >
+              <Input
+                value={askQuestion}
+                onChange={(e) => setAskQuestion(e.target.value)}
+                placeholder="Ask a question..."
+                className="flex-1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && askQuestion.trim()) runAction('ask_ai', askQuestion)
+                  if (e.key === 'Escape') setShowAskInput(false)
+                }}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!askQuestion.trim()}
+                onClick={() => runAction('ask_ai', askQuestion)}
+              >
+                Go
+              </Button>
+            </div>
+          )}
+        </div>
 
-            {card.status === 'done' && (
-              <>
-                {card.followups.map((turn, i) => (
-                  <div key={i} className="border-t border-subtle pt-2 mt-1 flex flex-col gap-1">
-                    <p className="text-secondary text-xs font-medium">You asked: {turn.question}</p>
-                    <div className="text-primary text-sm prose-sm">
-                      <ReactMarkdown>{turn.answer}</ReactMarkdown>
-                      {turn.status === 'streaming' && (
-                        <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
-                      )}
+<div className="w-96 bg-surface border-l border-subtle p-4 overflow-y-auto flex flex-col gap-4">          <h2 className="text-secondary text-xs font-medium uppercase tracking-wide">AI Panel</h2>
+
+          {cards.length === 0 && (
+            <EmptyState
+              title="Highlight code to get started"
+              description="Select any code in the editor and choose an action to get AI-powered insight."
+            />
+          )}
+
+          {cards.map((card) => (
+           <Card key={card.id} className="flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow border-subtle/60">
+              <div className="flex items-center justify-between pb-2 border-b border-subtle/60">
+  <Badge variant={actionBadgeVariant[card.actionType] || 'default'}>
+    {card.actionType.replace('_', ' ')}
+  </Badge>
+  <span className="text-tertiary text-[11px] font-mono truncate max-w-[180px]">
+    {card.filePath}:{card.range.startLine}-{card.range.endLine}
+  </span>
+</div>
+
+              {renderCardBody(card)}
+
+              {card.status === 'streaming' && (
+                <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
+              )}
+
+              {card.status === 'done' && (
+                <>
+                  {card.followups.map((turn, i) => (
+                    <div key={i} className="border-t border-subtle pt-2 mt-1 flex flex-col gap-1">
+                      <p className="text-secondary text-xs font-medium">You asked: {turn.question}</p>
+                      <div className="text-primary text-sm prose prose-sm max-w-none">
+                        <ReactMarkdown>{turn.answer}</ReactMarkdown>
+                        {turn.status === 'streaming' && (
+                          <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {!card.isFollowupOpen ? (
-                  <button
-                    onClick={() => toggleFollowup(card.id)}
-                    className="text-accent text-xs font-medium text-left hover:underline mt-1"
-                  >
-                    + Ask a follow-up
-                  </button>
-                ) : (
-                  <div className="flex gap-1 mt-1">
-                    <Input
-                      value={card.followupInput}
-                      onChange={(e) => updateFollowupInput(card.id, e.target.value)}
-                      placeholder="Ask a follow-up..."
-                      className="flex-1 text-xs"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') submitFollowup(card.id)
-                      }}
-                    />
-                    <Button variant="secondary" size="sm" onClick={() => submitFollowup(card.id)}>
-                      Send
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-        ))}
+                  {!card.isFollowupOpen ? (
+                    <button
+                      onClick={() => toggleFollowup(card.id)}
+                      className="text-accent text-xs font-medium text-left hover:underline mt-1"
+                    >
+                      + Ask a follow-up
+                    </button>
+                  ) : (
+                    <div className="flex gap-1 mt-1">
+                      <Input
+                        value={card.followupInput}
+                        onChange={(e) => updateFollowupInput(card.id, e.target.value)}
+                        placeholder="Ask a follow-up..."
+                        className="flex-1 text-xs"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') submitFollowup(card.id)
+                        }}
+                      />
+                      <Button variant="secondary" size="sm" onClick={() => submitFollowup(card.id)}>
+                        Send
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   )
