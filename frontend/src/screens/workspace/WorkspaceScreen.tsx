@@ -286,8 +286,7 @@ export function WorkspaceScreen() {
   return (
     <div className="flex flex-col h-screen bg-canvas">
       <div className="h-12 flex items-center px-4 border-b border-subtle bg-surface gap-3 shrink-0">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-white font-bold text-xs">
+<Link to="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity">          <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-white font-bold text-xs">
             CA
           </div>
           <span className="text-primary font-semibold text-sm">CodeAtlas AI</span>

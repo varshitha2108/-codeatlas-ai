@@ -100,8 +100,7 @@ onClick={() => {
   </button>
   <button
    type="button"
-    onClick={() => navigate('/home')}
-    style={{ borderColor: 'var(--border-default)', color: 'var(--text-primary)' }}
+onClick={() => window.location.href = 'http://localhost:3001/v1/auth/google'}    style={{ borderColor: 'var(--border-default)', color: 'var(--text-primary)' }}
     className="w-full border rounded-md py-2 text-sm font-medium hover:bg-hover transition-colors flex items-center justify-center gap-2"
   >
     <svg width="16" height="16" viewBox="0 0 24 24">
